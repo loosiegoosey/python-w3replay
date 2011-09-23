@@ -37,11 +37,11 @@ class Action:
         pass
 
 class DataBlock:    
-    def __init__(self, size, decompressed_size, unkown_checksum, compressed_data):
+    def __init__(self, size, decompressed_size, unknown_checksum, compressed_data):
         self.pos = 0
         self.size = size
         self.decompressed_size = decompressed_size
-        self.unkown_checksum = unkown_checksum
+        self.unknown_checksum = unknown_checksum
         self.compressed_data = compressed_data
         self.raw_data = ""
 
@@ -136,15 +136,15 @@ class DataBlock:
         while self.pos < len(self.raw_data) - 5:
             aid = self.read_bytes(1)
 
-            # unkown (5 bytes)
+            # unknown (5 bytes)
             if aid == '\x1a':
                 self.read_bytes(4)
 
-            # unkown (5 bytes)
+            # unknown (5 bytes)
             elif aid == '\x1b':
                 self.read_bytes(4)
 
-            # unkown (5 bytes)
+            # unknown (5 bytes)
             elif aid == '\x1c':
                 self.read_bytes(4)
 
@@ -166,11 +166,11 @@ class DataBlock:
                 chat_mode = self.read_bytes(4)
                 msg = self.read_string()
 
-            # unkown (checksum?) (6 bytes)
+            # unknown (checksum?) (6 bytes)
             elif aid == '\x22':
                 self.read_bytes(5)
 
-            # unkown (11 bytes)
+            # unknown (11 bytes)
             elif aid == '\x23':
                 self.read_bytes(10)
 
