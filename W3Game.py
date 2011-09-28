@@ -123,6 +123,7 @@ class W3Game:
 class ReplayDataReader:
     def __init__(self, data):
         self.data = data
+        self.time = 0
         self.blocks = {'\x17': ('LeaveGame',   self.handleLeaveGame),
                        '\x1A': ('Unkown',      self.skip(4)),
                        '\x1B': ('Unkown',      self.skip(4)), 
@@ -191,11 +192,12 @@ class ReplayDataReader:
     # GAMEDATA BLOCKS
     def handleLeaveGame(self):
         reason, player_id, result, nothing = self.read("IBII")
-        return {'type': 'LEAVEGAME', 'data': {'reason': reason, 'player_id': player_id, 'result': result}}
+        return {'type': 'LEAVEGAME', 'time': self.time, 'data': {'reason': reason, 'player_id': player_id, 'result': result}}
 
     def handleTimeSlot(self):
         num_bytes, time_increment = self.read("<HH")
         command_blocks = []
+        self.time += time_increment
 
         pos = 2
         while pos < num_bytes:
@@ -204,16 +206,16 @@ class ReplayDataReader:
             command_blocks.append(command_block)
             #print " - (End of Command Data Block)"
             pos += command_block['size']
-        return {'type': 'TIMESLOT', 'data': {'time': 'NONE', 'command_blocks': command_blocks}}
+        return {'type': 'TIMESLOT', 'time': self.time, 'data': {'command_blocks': command_blocks}}
 
     def handleChatMessage(self):
         player_id, num_bytes, flags, mode = self.read("<BHBI")
         message = self.read_string()
-        return {'type': 'CHATMESSAGE', 'data': {'player_id': player_id, 'flags': flags, 'mode': mode, 'message': message}}
+        return {'type': 'CHATMESSAGE', 'time': self.time, 'data': {'player_id': player_id, 'flags': flags, 'mode': mode, 'message': message}}
 
     def handleForceGameEnd(self):
         mode, countdown_time = self.read("<II")
-        return {'type': 'FORCEEND', 'data': {'mode': mode, 'countdown_time': countdown_time}}
+        return {'type': 'FORCEEND', 'time': self.time, 'data': {'mode': mode, 'countdown_time': countdown_time}}
 
     # ACTION BLOCKS
     def handleDotaInfo(self):
