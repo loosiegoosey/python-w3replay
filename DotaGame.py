@@ -27,6 +27,8 @@ class Player:
         self.death_log = []
         self.assist_log = []
         self.tower_log = []
+        self.item_log = []
+        self.items = []
 
     def get_dota_id(self):
         return self.color
@@ -46,6 +48,19 @@ class Hero:
 
     def __repr__(self):
         return "<Hero '%s' (%s)>" % (self.id, self.name)
+
+class Item:
+    def __init__(self, id):
+        self.id = id
+        if not UNIT_DATA.has_key(self.id):
+            self.name = "UNKOWN"
+            self.icon = "unkown.png"
+        else:
+            self.name = UNIT_DATA[self.id]['Name']
+            self.icon = UNIT_DATA[self.id]['Image'][:-4] + ".png"
+
+    def __repr__(self):
+        return "<Item '%s' (%s)>" % (self.id, self.name)
 
 class Message:
     def __init__(self, player, text, mode, time):
@@ -79,6 +94,9 @@ class DotaGame:
             message.player.messages.append(message)
 
         self.parse_dotainfo()
+
+        for player in self.players:
+            print player.name, player.items
 
     def get_dotaplayer(self, pid):
         for player in self.players:
@@ -127,8 +145,14 @@ class DotaGame:
                             data = b.replace('Level', '')
                         elif b.startswith('PUI_'):
                             data = b.replace('PUI_', '')
+                            player_id = int(data)
+                            item = Item(c)
+                            info[player_id]['item_log'].append({'time': gd['time'], 'action': 'purchase', 'item': item})
                         elif b.startswith('DRI_'):
                             data = b.replace('DRI_', '')
+                            player_id = int(data)
+                            item = Item(c)
+                            info[player_id]['item_log'].append({'time': gd['time'], 'action': 'drop', 'item': item})
                         elif b.startswith('Tower'):
                             # TODO: Read Team/Lane/Number information from tower (b=Team(0/1)/Number(1/2/3/4)/Lane(0/1/2))
                             player_id = int(c)
@@ -136,7 +160,6 @@ class DotaGame:
                                 info[player_id]['towers'] = 0
                             info[player_id]['towers'] += 1
                             info[player_id]['tower_log'].append({'time': gd['time']})
-
                     elif a.isdigit():
                         player_id = int(a)
                         data = c
@@ -156,11 +179,14 @@ class DotaGame:
                             act = 'gold'
                         elif b == '7':
                             act = 'cneutrals'
-                        elif b == '8':
-                            act = 'inventory'
                         elif b == '9':
                             act = 'hero'
                         elif b == 'id':
+                            continue
+                        elif b.startswith('8_'):
+                            act = 'items'
+                            if data:
+                                info[player_id][act].append(Item(data))
                             continue
 
                         info[player_id][act] = data
@@ -179,6 +205,8 @@ class DotaGame:
             player.death_log = info[player.dota_id]['death_log']
             player.assist_log = info[player.dota_id]['assist_log']
             player.tower_log = info[player.dota_id]['tower_log']
+            player.item_log = info[player.dota_id]['item_log']
+            player.items = info[player.dota_id]['items']
             
             # correct zero towers
             if player.towers == []:
